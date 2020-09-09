@@ -20,6 +20,7 @@ static void trace(enum pack_trace level, const char *fmt, va_list va)
 	switch (level) {
 	case PACK_TRACE_CALL: type = "CALL"; break;
 	case PACK_TRACE_DEBUG: type = "DEBUG"; break;
+	default: type = "???"; break;
 	}
 
 	fprintf(stderr, "PACK_TRACE_%s: ", type);
