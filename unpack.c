@@ -3,40 +3,28 @@
  * SPDX-License-Identifier: MIT
  */
 #include <ctype.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <limits.h>
-
-#include <stdio.h>
 
 #include "common.h"
 #include "pack.h"
-
-typedef enum pack_status unpacker(void *buf, size_t size, va_list ap);
+#include "trace.h"
 
 enum endian { BIG, LITTLE };
 
 uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
 {
-	unsigned long long val = 0;
+	uintmax_t val = 0;
 
-	for (size_t i = 0; i < size; i++)
-		val |= (buf[i] & 0xff) << (e == LITTLE ? i : size - i - 1) * 8;
+	for (size_t i = 0; i < size; i++) {
+		val |= (uintmax_t)(buf[i] & 0xff) << (e == LITTLE ? i : size - i - 1) * 8;
+	}
 
 	return val;
 }
-#define X(M) \
-	M(b, signed   char     ) \
-	M(B, unsigned char     ) \
-	M(h,          short    ) \
-	M(H, unsigned short    ) \
-	M(i,          int      ) \
-	M(I, unsigned          ) \
-	M(l,          long     ) \
-	M(L, unsigned long     ) \
-	M(q,          long long) \
-	M(Q, unsigned long long)
 
 enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 {
@@ -44,6 +32,8 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 	unsigned char *buf = buf_;
 	size_t offset = 0;
 	va_list ap;
+
+	tr_call("unpack(%p, %zu, %s, ...)", buf, size, fmt);
 
 	va_start(ap, fmt);
 
@@ -62,26 +52,27 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			         long long *q;
 			unsigned long long *Q;
 		} arg;
-		/*void *arg;*/
 		union { uintmax_t u; intmax_t s; } val;
+		tr_debug("i: %d, fmt[i]: %c, sign: %ssigned", i, fmt[i], sign ? "" : "un");
 		switch (fmt[i]) {
 		case '>': endianness = BIG; continue;
 		case '<': endianness = LITTLE; continue;
-		case 'b': arg.b = va_arg(ap, signed   char      *);
-		case 'B': arg.B = va_arg(ap, unsigned char      *);
-		case 'h': arg.h = va_arg(ap,          short     *);
-		case 'H': arg.H = va_arg(ap, unsigned short     *);
-		case 'i': arg.i = va_arg(ap,          int       *);
-		case 'I': arg.I = va_arg(ap, unsigned           *);
-		case 'l': arg.l = va_arg(ap,          long      *);
-		case 'L': arg.L = va_arg(ap, unsigned long      *);
-		case 'q': arg.q = va_arg(ap,          long long *);
-		case 'Q': arg.Q = va_arg(ap, unsigned long long *);
+		case 'b': arg.b = va_arg(ap, signed   char      *); break;
+		case 'B': arg.B = va_arg(ap, unsigned char      *); break;
+		case 'h': arg.h = va_arg(ap,          short     *); break;
+		case 'H': arg.H = va_arg(ap, unsigned short     *); break;
+		case 'i': arg.i = va_arg(ap,          int       *); break;
+		case 'I': arg.I = va_arg(ap, unsigned           *); break;
+		case 'l': arg.l = va_arg(ap,          long      *); break;
+		case 'L': arg.L = va_arg(ap, unsigned long      *); break;
+		case 'q': arg.q = va_arg(ap,          long long *); break;
+		case 'Q': arg.Q = va_arg(ap, unsigned long long *); break;
 		case 'x': break;
 		return PACK_FMTINVAL;
 		}
 
 		s = getsize(fmt[i]);
+		tr_debug("s: %zu", s);
 		if (s == (size_t)-1) return PACK_FMTINVAL;
 
 		if (size - offset < s) return PACK_TOOSMALL;
@@ -89,33 +80,31 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 		if (fmt[i] == 'x') goto skip;
 
 		val.u = read_val(buf, s, endianness);
-
-		fprintf(stderr, "%zu, %llu\n", s, val.u);
+		tr_debug("val.u: %" PRIuMAX, val.u);
 
 		if (sign) {
 			intmax_t vals;
-			if (!(val.u & (1llu << (s * 8 - 1)))) {
+			if (!(val.u & (UINTMAX_C(1) << (s * 8 - 1)))) {
 				vals = val.u;
 			} else {
 				uintmax_t offt = UINTMAX_MAX >> (sizeof offt * CHAR_BIT - s * 8);
 				vals = val.u - offt - 1;
 			}
 			val.s = vals;
-			fprintf(stderr, "signed %lld\n", val.s);
+			tr_debug("val.s: %" PRIdMAX, val.s);
 		}
 
 		switch (fmt[i]) {
-#define D(t, f) fprintf(stderr, "(%p) "#t " = %" #f "\n", (void *)arg.t, *arg.t)
-		case 'b': *arg.b = val.s; D(b, d); break;
-		case 'B': *arg.B = val.u; D(B, u); break;
-		case 'h': *arg.h = val.s; D(h, d); break;
-		case 'H': *arg.H = val.u; D(H, u); break;
-		case 'i': *arg.i = val.s; D(i, d); break;
-		case 'I': *arg.I = val.u; D(I, u); break;
-		case 'l': *arg.l = val.s; D(l, ld); break;
-		case 'L': *arg.L = val.u; D(L, lu); break;
-		case 'q': *arg.q = val.s; D(q, lld); break;
-		case 'Q': *arg.Q = val.u; D(Q, llu); break;
+		case 'b': *arg.b = val.s; break;
+		case 'B': *arg.B = val.u; break;
+		case 'h': *arg.h = val.s; break;
+		case 'H': *arg.H = val.u; break;
+		case 'i': *arg.i = val.s; break;
+		case 'I': *arg.I = val.u; break;
+		case 'l': *arg.l = val.s; break;
+		case 'L': *arg.L = val.u; break;
+		case 'q': *arg.q = val.s; break;
+		case 'Q': *arg.Q = val.u; break;
 		}
 skip:
 		offset += s;
