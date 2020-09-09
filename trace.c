@@ -10,6 +10,7 @@
 
 enum pack_trace pack_trace = PACK_TRACE_OFF;
 
+ATTRIBUTE_FORMAT(printf, 2, 0)
 static void trace(enum pack_trace level, const char *fmt, va_list va)
 {
 	char *type;
