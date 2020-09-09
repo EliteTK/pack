@@ -10,7 +10,7 @@
 
 enum pack_trace pack_trace = PACK_TRACE_OFF;
 
-void trace(enum pack_trace level, const char *fmt, va_list va)
+static void trace(enum pack_trace level, const char *fmt, va_list va)
 {
 	char *type;
 

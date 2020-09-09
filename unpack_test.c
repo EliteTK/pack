@@ -16,7 +16,7 @@ struct test {
 	char *desc;
 };
 
-#define TEST(name) bool test_##name(void)
+#define TEST(name) static bool test_##name(void)
 #define TEST_ENTRY(name, description) { test_##name, description }
 #define TEST_ENTRY_END { NULL, NULL }
 #define DATA(...) (unsigned char []){ __VA_ARGS__ }, sizeof (unsigned char []){ __VA_ARGS__ }

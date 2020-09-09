@@ -19,14 +19,14 @@ struct {
 	{ LITTLE, "<" },
 };
 
-char cchar(char c)
+static char cchar(char c)
 {
 	if (c == '\0') return c;
 	if (isalnum(c)) return c;
 	return '_';
 }
 
-const char *cname(const char *s)
+static const char *cname(const char *s)
 {
 	static char ret[100];
 	for (int i = 0; i < 99; i++) {
@@ -36,7 +36,7 @@ const char *cname(const char *s)
 	return ret;
 }
 
-const char *u2bytes(enum endian e, int n, uintmax_t v)
+static const char *u2bytes(enum endian e, int n, uintmax_t v)
 {
 	static char b[100];
 	char *p = b;
@@ -52,7 +52,7 @@ const char *u2bytes(enum endian e, int n, uintmax_t v)
 	return b;
 }
 
-uintmax_t i2u(int n, intmax_t v)
+static uintmax_t i2u(int n, intmax_t v)
 {
 	if (v >= 0)
 		return v;
@@ -60,12 +60,12 @@ uintmax_t i2u(int n, intmax_t v)
 	return (UINTMAX_MAX >> (sizeof (uintmax_t) * CHAR_BIT - n * 8)) + v + 1;
 }
 
-const char *i2bytes(enum endian e, int n, intmax_t v)
+static const char *i2bytes(enum endian e, int n, intmax_t v)
 {
 	return u2bytes(e, n, i2u(n, v));
 }
 
-void generate_simple(FILE *out, char fmt, const char *type, intmax_t min, uintmax_t max, int size)
+static void generate_simple(FILE *out, char fmt, const char *type, intmax_t min, uintmax_t max, int size)
 {
 	unsigned char data[8];
 	char *prefix;

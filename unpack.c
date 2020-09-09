@@ -15,7 +15,7 @@
 
 enum endian { BIG, LITTLE };
 
-uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
+static uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
 {
 	uintmax_t val = 0;
 
