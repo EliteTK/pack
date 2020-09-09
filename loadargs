@@ -1,0 +1,8 @@
+#/fake/bash
+if [ -r "$1.args" ]; then
+	redo-ifchange "$1.args"
+	mapfile -t args <"$1.args"
+else
+	redo-ifcreate "$1.args"
+	args=()
+fi

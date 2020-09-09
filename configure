@@ -1,0 +1,5 @@
+#!/bin/sh
+
+for f in args/"$1"/*; do
+	ln -sf "$f"
+done

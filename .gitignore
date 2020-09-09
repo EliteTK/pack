@@ -1,4 +1,6 @@
+*.d
 *.o
 *_test
 *.inc
 *_gen
+*.args

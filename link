@@ -1,0 +1,4 @@
+#/fake/bash
+redo-ifchange "$0" "link" "${deps[@]}"
+. loadargs "link"
+gcc -o "$3" "${deps[@]}"
