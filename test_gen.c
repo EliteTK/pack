@@ -45,7 +45,7 @@ static const char *u2bytes(enum endian e, int n, uintmax_t v)
 
 	for (int i = 0; i < n; i++) {
 		p += snprintf(p, b + sizeof(b) - p, "%s0x%x", i == 0 ? "" : ", ",
-			      (v >> (e == LITTLE ? i : n - i - 1) * 8) & 0xff);
+			      (int)((v >> (e == LITTLE ? i : n - i - 1) * 8) & 0xff));
 		assert(p < b + sizeof(b));
 	}
 
@@ -65,7 +65,7 @@ static const char *i2bytes(enum endian e, int n, intmax_t v)
 	return u2bytes(e, n, i2u(n, v));
 }
 
-static void generate_simple(FILE *out, char fmt, const char *type, intmax_t min, uintmax_t max, int size)
+static void generate_simple(FILE *out, char fmt, const char *type, intmax_t min, uintmax_t max, size_t size)
 {
 	unsigned char data[8];
 	char *prefix;
