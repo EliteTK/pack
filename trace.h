@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Tomasz Kramkowski <tk@the-tk.com>
+ * SPDX-License-Identifier: MIT
+ */
 #ifndef PACK_TRACE_H
 #define PACK_TRACE_H
 

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2020 Tomasz Kramkowski <tk@the-tk.com>
+ * SPDX-License-Identifier: MIT
+ */
 #include <stddef.h>
 
 #include "common.h"
