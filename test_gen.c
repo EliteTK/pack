@@ -88,7 +88,7 @@ void generate_simple(FILE *out, char fmt, const char *type, intmax_t min, uintma
 		if (sign) {
 			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &%c);\n",
 				i2bytes(endian[e].e, size, min), endian[e].prefix, fmt, fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)%c, INTMAX_C(%" PRIdMAX "));\n", fmt, min);
+			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)%c, -INTMAX_C(%" PRIdMAX ")-1);\n", fmt, -(min + 1));
 		}
 		fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &%c);\n",
 			u2bytes(endian[e].e, size, max), endian[e].prefix, fmt, fmt);
