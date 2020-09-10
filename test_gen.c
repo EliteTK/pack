@@ -99,6 +99,44 @@ static const char *i2bytes(enum endian e, int n, intmax_t v)
 	return u2bytes(e, n, i2u(n, v));
 }
 
+static void signed_check(FILE *out, const struct fmtinfo *fi, enum endian e, intmax_t testval, int arraysize)
+{
+	char sizeprefix[11] = "";
+	const char *data;
+
+	if (arraysize >= 1)
+		snprintf(sizeprefix, sizeof sizeprefix, "%d", arraysize);
+	else
+		arraysize = 1;
+
+	fprintf(out, "\tCHECK_UNPACK(DATA(");
+	data = i2bytes(endian[e].e, fi->size, testval);
+	for (int i = 0; i < arraysize; i++)
+		fprintf(out, "%s%s", i == 0 ? "" : ", ", data);
+	fprintf(out, "), \"%s%s%c\", v);\n", endian[e].prefix, sizeprefix, fi->fmt);
+	for (int i = 0; i < arraysize; i++)
+		fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v[%d], -INTMAX_C(%" PRIdMAX ")-1);\n", i, -(testval + 1));
+}
+
+static void unsigned_check(FILE *out, const struct fmtinfo *fi, enum endian e, uintmax_t testval, int arraysize)
+{
+	char sizeprefix[11] = "";
+	const char *data;
+
+	if (arraysize >= 1)
+		snprintf(sizeprefix, sizeof sizeprefix, "%d", arraysize);
+	else
+		arraysize = 1;
+
+	fprintf(out, "\tCHECK_UNPACK(DATA(");
+	data = u2bytes(endian[e].e, fi->size, testval);
+	for (int i = 0; i < arraysize; i++)
+		fprintf(out, "%s%s", i == 0 ? "" : ", ", data);
+	fprintf(out, "), \"%s%s%c\", v);\n", endian[e].prefix, sizeprefix, fi->fmt);
+	for (int i = 0; i < arraysize; i++)
+		fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (uintmax_t)v[%d], UINTMAX_C(%" PRIuMAX "));\n", i, testval);
+}
+
 static void generate_simple(FILE *out, enum fmt fmt)
 {
 	unsigned char data[8];
@@ -117,19 +155,11 @@ static void generate_simple(FILE *out, enum fmt fmt)
 	fprintf(out, "{\n");
 	fprintf(out, "\t%s v[1] = { __LINE__ };\n", fi->type);
 	for (size_t e = 0; e < sizeof endian / sizeof endian[0]; e++) {
-		for (int i = sign ? -1 : 0; i <= 1; i++) {
-			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", v);\n",
-				i2bytes(endian[e].e, fi->size, i), endian[e].prefix, fi->fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v[0], INTMAX_C(%d));\n", i);
-		}
-		if (sign) {
-			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", v);\n",
-				i2bytes(endian[e].e, fi->size, fi->min), endian[e].prefix, fi->fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v[0], -INTMAX_C(%" PRIdMAX ")-1);\n", -(fi->min + 1));
-		}
-		fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", v);\n",
-			u2bytes(endian[e].e, fi->size, fi->max), endian[e].prefix, fi->fmt);
-		fprintf(out, "\tCHECK_EQUAL(PRIuMAX, (uintmax_t)v[0], UINTMAX_C(%" PRIuMAX "));\n", fi->max);
+		for (int i = sign ? -1 : 0; i <= 1; i++)
+			signed_check(out, fi, e, i, 0);
+		if (sign)
+			signed_check(out, fi, e, fi->min, 0);
+		unsigned_check(out, fi, e, fi->max, 0);
 	}
 	fprintf(out, "\treturn true;\n");
 	fprintf(out, "}\n");
