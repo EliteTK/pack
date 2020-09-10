@@ -42,6 +42,16 @@ int main(void)
 
 	pack_trace = PACK_TRACE_OFF;
 
-	for (struct test *t = &__start_tests; t < &__stop_tests; t++)
-		printf("%s %s\n", t->func() ? " OK " : "FAIL", t->desc);
+	for (struct test *t = &__start_tests; t < &__stop_tests; t++) {
+		if (t->func()) {
+			printf(" OK %s\n", t->desc);
+			continue;
+		}
+		pack_trace = PACK_TRACE_ALL;
+		fprintf(stderr, ">>> Test failure trace for '%s'\n", t->desc);
+		t->func();
+		fprintf(stderr, "<<<\n");
+		pack_trace = PACK_TRACE_OFF;
+		printf("FAIL %s\n", t->desc);
+	}
 }
