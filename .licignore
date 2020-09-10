@@ -1,2 +1,7 @@
+*.do
 .gitignore
 .licignore
+configure
+link
+loadargs
+scripts/
