@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,6 +17,36 @@
 #include "trace.h"
 
 enum endian { BIG, LITTLE };
+
+static float ieee754tof(uintmax_t b)
+{
+	bool isneg;
+	int exp;
+	float n;
+
+	isneg = (b >> 31) & 0x1;
+	exp = (b >> 23) & 0xff;
+	n = b & 0x7fffff;
+
+	if (exp == 0xff) {
+		if (n) {
+			return NAN;
+		} else {
+			return isneg ? -INFINITY : INFINITY;
+		}
+	} else if (exp == 0) {
+		if (n == 0)
+			return isneg ? -0.0 : 0.0;
+		exp = -126;
+	} else {
+		n += 0x1p23f;
+		exp -= 127;
+	}
+
+	n = ldexpf(n, exp - 23);
+
+	return isneg ? -n : n;
+}
 
 static uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
 {
@@ -53,8 +84,9 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			unsigned long      *L;
 			         long long *q;
 			unsigned long long *Q;
+			         float     *f;
 		} arg;
-		union { uintmax_t u; intmax_t s; } val;
+		union { uintmax_t u; intmax_t s; float f; } val;
 		tr_debug("i: %d, fmt[i]: %c", i, fmt[i]);
 		if (isdigit(fmt[i])) {
 			unsigned long long c;
@@ -86,6 +118,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 		case 'L': arg.L = va_arg(ap, unsigned long      *); break;
 		case 'q': arg.q = va_arg(ap,          long long *); break;
 		case 'Q': arg.Q = va_arg(ap, unsigned long long *); break;
+		case 'f': arg.f = va_arg(ap,          float     *); break;
 		case 'x': break;
 		return PACK_FMTINVAL;
 		}
@@ -102,7 +135,11 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			val.u = read_val(buf + s * j, s, endianness);
 			tr_debug("val.u: %" PRIuMAX, val.u);
 
-			if (sign) {
+			if (fmt[i] == 'f') {
+				float f = ieee754tof(val.u);
+				val.f = f;
+				tr_debug("val.f: %f", val.f);
+			} else if (sign) {
 				intmax_t vals;
 				if (!(val.u & (UINTMAX_C(1) << (s * 8 - 1)))) {
 					vals = val.u;
@@ -125,6 +162,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			case 'L': arg.L[j] = val.u; break;
 			case 'q': arg.q[j] = val.s; break;
 			case 'Q': arg.Q[j] = val.u; break;
+			case 'f': arg.f[j] = val.f; break;
 			}
 		}
 skip:

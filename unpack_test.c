@@ -36,6 +36,20 @@ struct test {
 
 #include "unpack_test.inc"
 
+TEST(simple0_float, "simple unpack float")
+{
+	float v[1] = { __LINE__ };
+
+	CHECK_UNPACK(DATA(0x00, 0x00, 0x00, 0x00), "f", &v);
+	CHECK_EQUAL("f", v[0], 0.0f);
+	CHECK_UNPACK(DATA(0x3f, 0x80, 0x00, 0x00), "f", &v);
+	CHECK_EQUAL("f", v[0], 1.0f);
+	CHECK_UNPACK(DATA(0x41, 0x00, 0x00, 0x00), "f", &v);
+	CHECK_EQUAL("f", v[0], 8.0f);
+
+	return true;
+}
+
 int main(void)
 {
 	extern struct test __start_tests, __stop_tests;
