@@ -39,6 +39,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 
 	for (int i = 0; fmt[i] != '\0'; i++) {
 		bool sign = islower(fmt[i]);
+		unsigned long long count = 1;
 		size_t s;
 		union {
 			signed   char      *b;
@@ -75,39 +76,41 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 		tr_debug("s: %zu", s);
 		if (s == (size_t)-1) return PACK_FMTINVAL;
 
-		if (size - offset < s) return PACK_TOOSMALL;
+		if (size - offset < s * count) return PACK_TOOSMALL;
 
 		if (fmt[i] == 'x') goto skip;
 
-		val.u = read_val(buf, s, endianness);
-		tr_debug("val.u: %" PRIuMAX, val.u);
+		for (unsigned long long j = 0; j < count; j++) {
+			val.u = read_val(buf + s * j, s, endianness);
+			tr_debug("val.u: %" PRIuMAX, val.u);
 
-		if (sign) {
-			intmax_t vals;
-			if (!(val.u & (UINTMAX_C(1) << (s * 8 - 1)))) {
-				vals = val.u;
-			} else {
-				uintmax_t offt = UINTMAX_MAX >> (sizeof offt * CHAR_BIT - s * 8);
-				vals = val.u - offt - 1;
+			if (sign) {
+				intmax_t vals;
+				if (!(val.u & (UINTMAX_C(1) << (s * 8 - 1)))) {
+					vals = val.u;
+				} else {
+					uintmax_t offt = UINTMAX_MAX >> (sizeof offt * CHAR_BIT - s * 8);
+					vals = val.u - offt - 1;
+				}
+				val.s = vals;
+				tr_debug("val.s: %" PRIdMAX, val.s);
 			}
-			val.s = vals;
-			tr_debug("val.s: %" PRIdMAX, val.s);
-		}
 
-		switch (fmt[i]) {
-		case 'b': *arg.b = val.s; break;
-		case 'B': *arg.B = val.u; break;
-		case 'h': *arg.h = val.s; break;
-		case 'H': *arg.H = val.u; break;
-		case 'i': *arg.i = val.s; break;
-		case 'I': *arg.I = val.u; break;
-		case 'l': *arg.l = val.s; break;
-		case 'L': *arg.L = val.u; break;
-		case 'q': *arg.q = val.s; break;
-		case 'Q': *arg.Q = val.u; break;
+			switch (fmt[i]) {
+			case 'b': arg.b[j] = val.s; break;
+			case 'B': arg.B[j] = val.u; break;
+			case 'h': arg.h[j] = val.s; break;
+			case 'H': arg.H[j] = val.u; break;
+			case 'i': arg.i[j] = val.s; break;
+			case 'I': arg.I[j] = val.u; break;
+			case 'l': arg.l[j] = val.s; break;
+			case 'L': arg.L[j] = val.u; break;
+			case 'q': arg.q[j] = val.s; break;
+			case 'Q': arg.Q[j] = val.u; break;
+			}
 		}
 skip:
-		offset += s;
+		offset += s * count;
 	}
 
 	va_end(ap);
