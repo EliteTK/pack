@@ -139,7 +139,6 @@ static void unsigned_check(FILE *out, const struct fmtinfo *fi, enum endian e, u
 
 static void generate_simple(FILE *out, enum fmt fmt)
 {
-	unsigned char data[8];
 	struct fmtinfo *fi;
 	bool sign;
 
@@ -148,8 +147,6 @@ static void generate_simple(FILE *out, enum fmt fmt)
 	fi = &fmtinfo[fmt];
 
 	sign = islower(fi->fmt);
-
-	assert(fi->size <= sizeof data);
 
 	fprintf(out, "TEST(%s)\n", cname(fi->type));
 	fprintf(out, "{\n");
