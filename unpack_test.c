@@ -16,9 +16,12 @@ struct test {
 	char *desc;
 };
 
-#define TEST(name) static bool test_##name(void)
-#define TEST_ENTRY(name, description) { test_##name, description }
-#define TEST_ENTRY_END { NULL, NULL }
+#define TEST(name, desc) static bool test_##name(void); \
+	static struct test testinfo_##name \
+	__attribute__((__section__("tests"))) \
+	__attribute__((__used__)) = \
+		{ test_##name, desc }; \
+	static bool test_##name(void)
 #define DATA(...) (unsigned char []){ __VA_ARGS__ }, sizeof (unsigned char []){ __VA_ARGS__ }
 #define CHECK(test) if (!(test)) { puts("! " #test); return false; }
 
@@ -35,22 +38,10 @@ struct test {
 
 int main(void)
 {
+	extern struct test __start_tests, __stop_tests;
+
 	pack_trace = PACK_TRACE_OFF;
 
-	struct test tests[] = {
-		TEST_ENTRY(signed_char, "signed char unpacking"),
-		TEST_ENTRY(unsigned_char, "unsigned char unpacking"),
-		TEST_ENTRY(signed_short, "signed short unpacking"),
-		TEST_ENTRY(unsigned_short, "unsigned short unpacking"),
-		TEST_ENTRY(signed_int, "signed int unpacking"),
-		TEST_ENTRY(unsigned_int, "unsigned int unpacking"),
-		TEST_ENTRY(signed_long, "signed long unpacking"),
-		TEST_ENTRY(unsigned_long, "unsigned long unpacking"),
-		TEST_ENTRY(signed_long_long, "signed long long unpacking"),
-		TEST_ENTRY(unsigned_long_long, "unsigned long long unpacking"),
-		TEST_ENTRY_END
-	};
-
-	for (int i = 0; tests[i].func != NULL; i++)
-		printf("%s %s\n", tests[i].func() ? " OK " : "FAIL", tests[i].desc);
+	for (struct test *t = &__start_tests; t < &__stop_tests; t++)
+		printf("%s %s\n", t->func() ? " OK " : "FAIL", t->desc);
 }

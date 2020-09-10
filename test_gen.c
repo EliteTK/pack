@@ -148,7 +148,7 @@ static void generate_simple(FILE *out, enum fmt fmt)
 
 	sign = islower(fi->fmt);
 
-	fprintf(out, "TEST(%s)\n", cname(fi->type));
+	fprintf(out, "TEST(%s, \"simple unpack %s\")\n", cname(fi->type), fi->type);
 	fprintf(out, "{\n");
 	fprintf(out, "\t%s v[1] = { __LINE__ };\n", fi->type);
 	for (size_t e = 0; e < sizeof endian / sizeof endian[0]; e++) {
