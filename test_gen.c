@@ -172,6 +172,9 @@ static void generate_simple(FILE *out, enum fmt fmt, int arraysize)
 int main(void)
 {
 	FILE *out = stdout;
-	for (enum fmt fmt = FMT_BEGIN; fmt < FMT_END; fmt++)
+	for (enum fmt fmt = FMT_BEGIN; fmt < FMT_END; fmt++) {
 		generate_simple(out, fmt, 0);
+		for (int i = 2; i < 4; i++)
+			generate_simple(out, fmt, i);
+	}
 }

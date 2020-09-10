@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 #include <ctype.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "pack.h"
@@ -38,9 +40,8 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	for (int i = 0; fmt[i] != '\0'; i++) {
-		bool sign = islower(fmt[i]);
-		unsigned long long count = 1;
-		size_t s;
+		bool sign;
+		size_t count = 1, s;
 		union {
 			signed   char      *b;
 			unsigned char      *B;
@@ -54,7 +55,24 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			unsigned long long *Q;
 		} arg;
 		union { uintmax_t u; intmax_t s; } val;
-		tr_debug("i: %d, fmt[i]: %c, sign: %ssigned", i, fmt[i], sign ? "" : "un");
+		tr_debug("i: %d, fmt[i]: %c", i, fmt[i]);
+		if (isdigit(fmt[i])) {
+			unsigned long long c;
+			char *end;
+
+			errno = 0;
+			c = strtoull(&fmt[i], &end, 10);
+			if ((c == ULLONG_MAX && errno == ERANGE) || c > SIZE_MAX)
+				return PACK_FMTINVAL;
+			count = c;
+			i += end - &fmt[i];
+		} else if (fmt[i] == '*') {
+			count = va_arg(ap, size_t);
+			i++;
+		}
+		sign = islower(fmt[i]);
+		tr_debug("count: %zu, i: %d, fmt[i]: %c, sign: %ssigned",
+			 count, i, fmt[i], sign ? "" : "un");
 		switch (fmt[i]) {
 		case '>': endianness = BIG; continue;
 		case '<': endianness = LITTLE; continue;
