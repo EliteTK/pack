@@ -19,6 +19,40 @@ struct {
 	{ LITTLE, "<" },
 };
 
+enum fmt {
+	FMT_b,
+	FMT_B,
+	FMT_h,
+	FMT_H,
+	FMT_i,
+	FMT_I,
+	FMT_l,
+	FMT_L,
+	FMT_q,
+	FMT_Q,
+	FMT_END,
+	FMT_BEGIN = FMT_b,
+};
+
+struct fmtinfo {
+	char fmt;
+	char *type;
+	intmax_t min;
+	uintmax_t max;
+	size_t size;
+} fmtinfo[] = {
+	[FMT_b] = { 'b', "char",         INTMAX_C(               -128),     UINTMAX_C(                 127), 1 },
+	[FMT_B] = { 'B', "char",       INTMAX_C(                  0),     UINTMAX_C(                 255), 1 },
+	[FMT_h] = { 'h', "short",        INTMAX_C(             -32768),     UINTMAX_C(               32767), 2 },
+	[FMT_H] = { 'H', "short",      INTMAX_C(                  0),     UINTMAX_C(               65535), 2 },
+	[FMT_i] = { 'i', "int",          INTMAX_C(             -32768),     UINTMAX_C(               32767), 2 },
+	[FMT_I] = { 'I', "int",        INTMAX_C(                  0),     UINTMAX_C(               65535), 2 },
+	[FMT_l] = { 'l', "long",         INTMAX_C(        -2147483648),     UINTMAX_C(          2147483647), 4 },
+	[FMT_L] = { 'L', "long",       INTMAX_C(                  0),     UINTMAX_C(          4294967295), 4 },
+	[FMT_q] = { 'q', "long long",   -INTMAX_C(9223372036854775807) - 1, UINTMAX_C( 9223372036854775807), 8 },
+	[FMT_Q] = { 'Q', "long long",  INTMAX_C(                  0),     UINTMAX_C(18446744073709551615), 8 },
+};
+
 static char cchar(char c)
 {
 	if (c == '\0') return c;
@@ -65,34 +99,39 @@ static const char *i2bytes(enum endian e, int n, intmax_t v)
 	return u2bytes(e, n, i2u(n, v));
 }
 
-static void generate_simple(FILE *out, char fmt, const char *type, intmax_t min, uintmax_t max, size_t size)
+static void generate_simple(FILE *out, enum fmt fmt)
 {
 	unsigned char data[8];
+	struct fmtinfo *fi;
 	char *prefix;
 	bool sign;
 
-	sign = islower(fmt);
+	assert(fmt < FMT_END);
+
+	fi = &fmtinfo[fmt];
+
+	sign = islower(fi->fmt);
 	prefix = sign ? "signed" : "unsigned";
 
-	assert(size <= sizeof data);
+	assert(fi->size <= sizeof data);
 
-	fprintf(out, "TEST(%s_%s)\n", prefix, cname(type));
+	fprintf(out, "TEST(%s_%s)\n", prefix, cname(fi->type));
 	fprintf(out, "{\n");
-	fprintf(out, "\t%s %s %c = __LINE__;\n", prefix, type, fmt);
+	fprintf(out, "\t%s %s %c = __LINE__;\n", prefix, fi->type, fi->fmt);
 	for (size_t e = 0; e < sizeof endian / sizeof endian[0]; e++) {
 		for (int i = sign ? -1 : 0; i <= 1; i++) {
 			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &%c);\n",
-				i2bytes(endian[e].e, size, i), endian[e].prefix, fmt, fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)%c, INTMAX_C(%d));\n", fmt, i);
+				i2bytes(endian[e].e, fi->size, i), endian[e].prefix, fi->fmt, fi->fmt);
+			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)%c, INTMAX_C(%d));\n", fi->fmt, i);
 		}
 		if (sign) {
 			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &%c);\n",
-				i2bytes(endian[e].e, size, min), endian[e].prefix, fmt, fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)%c, -INTMAX_C(%" PRIdMAX ")-1);\n", fmt, -(min + 1));
+				i2bytes(endian[e].e, fi->size, fi->min), endian[e].prefix, fi->fmt, fi->fmt);
+			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)%c, -INTMAX_C(%" PRIdMAX ")-1);\n", fi->fmt, -(fi->min + 1));
 		}
 		fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &%c);\n",
-			u2bytes(endian[e].e, size, max), endian[e].prefix, fmt, fmt);
-		fprintf(out, "\tCHECK_EQUAL(PRIuMAX, (uintmax_t)%c, UINTMAX_C(%" PRIuMAX "));\n", fmt, max);
+			u2bytes(endian[e].e, fi->size, fi->max), endian[e].prefix, fi->fmt, fi->fmt);
+		fprintf(out, "\tCHECK_EQUAL(PRIuMAX, (uintmax_t)%c, UINTMAX_C(%" PRIuMAX "));\n", fi->fmt, fi->max);
 	}
 	fprintf(out, "\treturn true;\n");
 	fprintf(out, "}\n");
@@ -101,14 +140,6 @@ static void generate_simple(FILE *out, char fmt, const char *type, intmax_t min,
 int main(void)
 {
 	FILE *out = stdout;
-	generate_simple(out, 'b', "char",      INTMAX_C(                -128), UINTMAX_C(                 127), 1);
-	generate_simple(out, 'B', "char",      INTMAX_C(                   0), UINTMAX_C(                 255), 1);
-	generate_simple(out, 'h', "short",     INTMAX_C(              -32768), UINTMAX_C(               32767), 2);
-	generate_simple(out, 'H', "short",     INTMAX_C(                   0), UINTMAX_C(               65535), 2);
-	generate_simple(out, 'i', "int",       INTMAX_C(              -32768), UINTMAX_C(               32767), 2);
-	generate_simple(out, 'I', "int",       INTMAX_C(                   0), UINTMAX_C(               65535), 2);
-	generate_simple(out, 'l', "long",      INTMAX_C(         -2147483648), UINTMAX_C(          2147483647), 4);
-	generate_simple(out, 'L', "long",      INTMAX_C(                   0), UINTMAX_C(          4294967295), 4);
-	generate_simple(out, 'q', "long long", -INTMAX_C(9223372036854775807)-1, UINTMAX_C( 9223372036854775807), 8);
-	generate_simple(out, 'Q', "long long", INTMAX_C(                   0), UINTMAX_C(18446744073709551615), 8);
+	for (enum fmt fmt = FMT_BEGIN; fmt < FMT_END; fmt++)
+		generate_simple(out, fmt);
 }
