@@ -115,21 +115,21 @@ static void generate_simple(FILE *out, enum fmt fmt)
 
 	fprintf(out, "TEST(%s)\n", cname(fi->type));
 	fprintf(out, "{\n");
-	fprintf(out, "\t%s v = __LINE__;\n", fi->type);
+	fprintf(out, "\t%s v[1] = { __LINE__ };\n", fi->type);
 	for (size_t e = 0; e < sizeof endian / sizeof endian[0]; e++) {
 		for (int i = sign ? -1 : 0; i <= 1; i++) {
-			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &v);\n",
+			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", v);\n",
 				i2bytes(endian[e].e, fi->size, i), endian[e].prefix, fi->fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v, INTMAX_C(%d));\n", i);
+			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v[0], INTMAX_C(%d));\n", i);
 		}
 		if (sign) {
-			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &v);\n",
+			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", v);\n",
 				i2bytes(endian[e].e, fi->size, fi->min), endian[e].prefix, fi->fmt);
-			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v, -INTMAX_C(%" PRIdMAX ")-1);\n", -(fi->min + 1));
+			fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (intmax_t)v[0], -INTMAX_C(%" PRIdMAX ")-1);\n", -(fi->min + 1));
 		}
-		fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &v);\n",
+		fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", v);\n",
 			u2bytes(endian[e].e, fi->size, fi->max), endian[e].prefix, fi->fmt);
-		fprintf(out, "\tCHECK_EQUAL(PRIuMAX, (uintmax_t)v, UINTMAX_C(%" PRIuMAX "));\n", fi->max);
+		fprintf(out, "\tCHECK_EQUAL(PRIuMAX, (uintmax_t)v[0], UINTMAX_C(%" PRIuMAX "));\n", fi->max);
 	}
 	fprintf(out, "\treturn true;\n");
 	fprintf(out, "}\n");
