@@ -137,8 +137,9 @@ static void unsigned_check(FILE *out, const struct fmtinfo *fi, enum endian e, u
 		fprintf(out, "\tCHECK_EQUAL(PRIdMAX, (uintmax_t)v[%d], UINTMAX_C(%" PRIuMAX "));\n", i, testval);
 }
 
-static void generate_simple(FILE *out, enum fmt fmt)
+static void generate_simple(FILE *out, enum fmt fmt, int arraysize)
 {
+	int realsize = arraysize == 0 ? 1 : arraysize;
 	struct fmtinfo *fi;
 	bool sign;
 
@@ -148,15 +149,21 @@ static void generate_simple(FILE *out, enum fmt fmt)
 
 	sign = islower(fi->fmt);
 
-	fprintf(out, "TEST(%s, \"simple unpack %s\")\n", cname(fi->type), fi->type);
+	fprintf(out, "TEST(simple%d_%s, \"simple", arraysize, cname(fi->type));
+	if (arraysize != 0)
+		fprintf(out, " array[%d]", arraysize);
+	fprintf(out, " unpack %s\")\n", fi->type);
 	fprintf(out, "{\n");
-	fprintf(out, "\t%s v[1] = { __LINE__ };\n", fi->type);
+	fprintf(out, "\t%s v[%d] = { ", fi->type, realsize );
+	for (int i = 0; i < realsize; i++)
+		fprintf(out, "%s__LINE__ + %d", i == 0 ? "" : ", ", i);
+	fprintf(out, " };\n");
 	for (size_t e = 0; e < sizeof endian / sizeof endian[0]; e++) {
 		for (int i = sign ? -1 : 0; i <= 1; i++)
-			signed_check(out, fi, e, i, 0);
+			signed_check(out, fi, e, i, arraysize);
 		if (sign)
-			signed_check(out, fi, e, fi->min, 0);
-		unsigned_check(out, fi, e, fi->max, 0);
+			signed_check(out, fi, e, fi->min, arraysize);
+		unsigned_check(out, fi, e, fi->max, arraysize);
 	}
 	fprintf(out, "\treturn true;\n");
 	fprintf(out, "}\n");
@@ -166,5 +173,5 @@ int main(void)
 {
 	FILE *out = stdout;
 	for (enum fmt fmt = FMT_BEGIN; fmt < FMT_END; fmt++)
-		generate_simple(out, fmt);
+		generate_simple(out, fmt, 0);
 }
