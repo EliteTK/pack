@@ -41,16 +41,16 @@ struct fmtinfo {
 	uintmax_t max;
 	size_t size;
 } fmtinfo[] = {
-	[FMT_b] = { 'b', "char",         INTMAX_C(               -128),     UINTMAX_C(                 127), 1 },
-	[FMT_B] = { 'B', "char",       INTMAX_C(                  0),     UINTMAX_C(                 255), 1 },
-	[FMT_h] = { 'h', "short",        INTMAX_C(             -32768),     UINTMAX_C(               32767), 2 },
-	[FMT_H] = { 'H', "short",      INTMAX_C(                  0),     UINTMAX_C(               65535), 2 },
-	[FMT_i] = { 'i', "int",          INTMAX_C(             -32768),     UINTMAX_C(               32767), 2 },
-	[FMT_I] = { 'I', "int",        INTMAX_C(                  0),     UINTMAX_C(               65535), 2 },
-	[FMT_l] = { 'l', "long",         INTMAX_C(        -2147483648),     UINTMAX_C(          2147483647), 4 },
-	[FMT_L] = { 'L', "long",       INTMAX_C(                  0),     UINTMAX_C(          4294967295), 4 },
-	[FMT_q] = { 'q', "long long",   -INTMAX_C(9223372036854775807) - 1, UINTMAX_C( 9223372036854775807), 8 },
-	[FMT_Q] = { 'Q', "long long",  INTMAX_C(                  0),     UINTMAX_C(18446744073709551615), 8 },
+	[FMT_b] = { 'b', "signed char",         INTMAX_C(               -128),     UINTMAX_C(                 127), 1 },
+	[FMT_B] = { 'B', "unsigned char",       INTMAX_C(                  0),     UINTMAX_C(                 255), 1 },
+	[FMT_h] = { 'h', "signed short",        INTMAX_C(             -32768),     UINTMAX_C(               32767), 2 },
+	[FMT_H] = { 'H', "unsigned short",      INTMAX_C(                  0),     UINTMAX_C(               65535), 2 },
+	[FMT_i] = { 'i', "signed int",          INTMAX_C(             -32768),     UINTMAX_C(               32767), 2 },
+	[FMT_I] = { 'I', "unsigned int",        INTMAX_C(                  0),     UINTMAX_C(               65535), 2 },
+	[FMT_l] = { 'l', "signed long",         INTMAX_C(        -2147483648),     UINTMAX_C(          2147483647), 4 },
+	[FMT_L] = { 'L', "unsigned long",       INTMAX_C(                  0),     UINTMAX_C(          4294967295), 4 },
+	[FMT_q] = { 'q', "signed long long",   -INTMAX_C(9223372036854775807) - 1, UINTMAX_C( 9223372036854775807), 8 },
+	[FMT_Q] = { 'Q', "unsigned long long",  INTMAX_C(                  0),     UINTMAX_C(18446744073709551615), 8 },
 };
 
 static char cchar(char c)
@@ -103,7 +103,6 @@ static void generate_simple(FILE *out, enum fmt fmt)
 {
 	unsigned char data[8];
 	struct fmtinfo *fi;
-	char *prefix;
 	bool sign;
 
 	assert(fmt < FMT_END);
@@ -111,13 +110,12 @@ static void generate_simple(FILE *out, enum fmt fmt)
 	fi = &fmtinfo[fmt];
 
 	sign = islower(fi->fmt);
-	prefix = sign ? "signed" : "unsigned";
 
 	assert(fi->size <= sizeof data);
 
-	fprintf(out, "TEST(%s_%s)\n", prefix, cname(fi->type));
+	fprintf(out, "TEST(%s)\n", cname(fi->type));
 	fprintf(out, "{\n");
-	fprintf(out, "\t%s %s %c = __LINE__;\n", prefix, fi->type, fi->fmt);
+	fprintf(out, "\t%s %c = __LINE__;\n", fi->type, fi->fmt);
 	for (size_t e = 0; e < sizeof endian / sizeof endian[0]; e++) {
 		for (int i = sign ? -1 : 0; i <= 1; i++) {
 			fprintf(out, "\tCHECK_UNPACK(DATA(%s), \"%s%c\", &%c);\n",
