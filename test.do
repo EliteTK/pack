@@ -1,3 +1,3 @@
 #!/bin/bash
-deps=(test.o common.o unpack.o trace.o)
+deps=(test.o common.o pack.o unpack.o trace.o)
 . ./link

@@ -20,6 +20,7 @@ extern enum pack_trace {
 	PACK_TRACE_ALL,
 } pack_trace;
 
+enum pack_status pack(void *dest, size_t size, const char *fmt, ...);
 enum pack_status unpack(const void *buf, size_t size, const char *fmt, ...);
 
 const char *pack_strerror(enum pack_status status);
