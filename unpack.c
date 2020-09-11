@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -15,10 +14,6 @@
 #include "common.h"
 #include "pack.h"
 #include "trace.h"
-
-enum endian { BIG, LITTLE };
-
-#define BITMASK(n) (UINTMAX_MAX >> (sizeof (uintmax_t) * CHAR_BIT - n))
 
 #define GEN_CONV_IEEE754B(type, total, nexp, nfrac) \
 static type convert_ieee754b##total(uintmax_t b) \
