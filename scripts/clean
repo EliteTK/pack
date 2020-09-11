@@ -1,2 +1,2 @@
 #!/bin/sh
-find . \( -name '*.d' -o -name '*.o' -o -name '*_gen' -o -name '*.inc' \) -delete
+find . \( -name '*.d' -o -name '*.o' -o -name '*.inc' -o -name 'test_gen' -o -name 'test' \) -delete

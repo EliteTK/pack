@@ -34,7 +34,7 @@ struct test {
 } while (0)
 #define CHECK_EQUAL(f, a, b) if (a != b) { printf(__FILE__ ":%d %"f" != %"f"\n", __LINE__, a, b); return false; }
 
-#include "unpack_test.inc"
+#include "test.inc"
 
 TEST(simple0_float, "simple unpack float")
 {
