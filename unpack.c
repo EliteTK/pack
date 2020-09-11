@@ -128,7 +128,7 @@ enum pack_status unpack(const void *buf_, size_t size, const char *fmt, ...)
 		case 'f': arg.f = va_arg(ap,          float     *); break;
 		case 'd': arg.d = va_arg(ap,          double    *); break;
 		case 'x': break;
-		return PACK_FMTINVAL;
+		default: return PACK_FMTINVAL;
 		}
 
 		s = getsize(fmt[i]);
