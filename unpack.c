@@ -20,35 +20,38 @@ enum endian { BIG, LITTLE };
 
 #define BITMASK(n) (UINTMAX_MAX >> (sizeof (uintmax_t) * CHAR_BIT - n))
 
-static float ieee754tof(uintmax_t b)
-{
-	bool isneg;
-	int exp;
-	float n;
-
-	isneg = (b >> 31) & 0x1;
-	exp = (b >> 23) & 0xff;
-	n = b & 0x7fffff;
-
-	if (exp == 0xff) {
-		if (n) {
-			return NAN;
-		} else {
-			return isneg ? -INFINITY : INFINITY;
-		}
-	} else if (exp == 0) {
-		if (n == 0)
-			return isneg ? -0.0 : 0.0;
-		exp = -126;
-	} else {
-		n += 0x1p23f;
-		exp -= 127;
-	}
-
-	n = ldexpf(n, exp - 23);
-
-	return isneg ? -n : n;
+#define GEN_CONV_IEEE754B(type, total, nexp, nfrac) \
+static type convert_ieee754b##total(uintmax_t b) \
+{ \
+	bool isneg; \
+	int exp; \
+	type n; \
+\
+	isneg = (b >> (total - 1)) & 0x1; \
+	exp = (b >> nfrac) & BITMASK(nexp); \
+	n = b & BITMASK(nfrac); \
+\
+	if (exp == BITMASK(nexp)) { \
+		if (n) { \
+			return NAN; \
+		} else { \
+			return isneg ? -INFINITY : INFINITY; \
+		} \
+	} else if (exp == 0) { \
+		if (n == 0) \
+			return isneg ? -0.0 : 0.0; \
+		exp = -(int)(BITMASK(nexp) / 2 - 1); \
+	} else { \
+		n += 0x1p##nfrac##f; \
+		exp -= BITMASK(nexp) / 2; \
+	} \
+\
+	n = ldexpf(n, exp - nfrac); \
+\
+	return isneg ? -n : n; \
 }
+
+GEN_CONV_IEEE754B(float, 32, 8, 23)
 
 static uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
 {
@@ -138,7 +141,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			tr_debug("val.u: %" PRIuMAX, val.u);
 
 			if (fmt[i] == 'f') {
-				float f = ieee754tof(val.u);
+				float f = convert_ieee754b32(val.u);
 				val.f = f;
 				tr_debug("val.f: %f", val.f);
 			} else if (sign) {
