@@ -36,7 +36,7 @@ struct test {
 
 #include "test.inc"
 
-TEST(simple0_float, "simple unpack float")
+TEST(unpack_simple0_float, "unpack simple float")
 {
 	float v[1] = { __LINE__ };
 
@@ -50,7 +50,7 @@ TEST(simple0_float, "simple unpack float")
 	return true;
 }
 
-TEST(simple0_double, "simple unpack double")
+TEST(unpack_simple0_double, "unpack simple double")
 {
 	double v[1] = { __LINE__ };
 
@@ -64,7 +64,7 @@ TEST(simple0_double, "simple unpack double")
 	return true;
 }
 
-TEST(simple_padding, "simple unpack padding")
+TEST(unpack_simple_padding, "unpack simple padding")
 {
 	struct {
 		int i;

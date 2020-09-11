@@ -149,10 +149,10 @@ static void generate_simple(FILE *out, enum fmt fmt, int arraysize)
 
 	sign = islower(fi->fmt);
 
-	fprintf(out, "TEST(simple%d_%s, \"simple", arraysize, cname(fi->type));
+	fprintf(out, "TEST(unpack_simple%d_%s, \"unpack simple", arraysize, cname(fi->type));
 	if (arraysize != 0)
 		fprintf(out, " array[%d]", arraysize);
-	fprintf(out, " unpack %s\")\n", fi->type);
+	fprintf(out, " %s\")\n", fi->type);
 	fprintf(out, "{\n");
 	fprintf(out, "\t%s v[%d] = { ", fi->type, realsize );
 	for (int i = 0; i < realsize; i++)
