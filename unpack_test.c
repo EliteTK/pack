@@ -64,6 +64,27 @@ TEST(simple0_double, "simple unpack double")
 	return true;
 }
 
+TEST(simple_padding, "simple unpack padding")
+{
+	struct {
+		int i;
+		unsigned char c;
+		float f;
+	} v = { __LINE__, __LINE__ + 1, __LINE__ + 2 };
+
+	CHECK_UNPACK(DATA(0xff, 0x85,
+			  0x00, 0x00, 0x00,
+			  0x16,
+			  0x00, 0x00,
+			  0x40, 0x44, 0x58, 0x00),
+		     ">i3xBxxf", &v.i, &v.c, &v.f);
+	CHECK_EQUAL("d", v.i, -123);
+	CHECK_EQUAL("d", v.c, 22);
+	CHECK_EQUAL("f", v.f, 0x1.88bp+1);
+
+	return true;
+}
+
 int main(void)
 {
 	extern struct test __start_tests, __stop_tests;
