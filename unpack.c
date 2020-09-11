@@ -52,6 +52,7 @@ static type convert_ieee754b##total(uintmax_t b) \
 }
 
 GEN_CONV_IEEE754B(float, 32, 8, 23)
+GEN_CONV_IEEE754B(double, 64, 11, 52)
 
 static uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
 {
@@ -90,8 +91,9 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			         long long *q;
 			unsigned long long *Q;
 			         float     *f;
+			         double    *d;
 		} arg;
-		union { uintmax_t u; intmax_t s; float f; } val;
+		union { uintmax_t u; intmax_t s; float f; double d; } val;
 		tr_debug("i: %d, fmt[i]: %c", i, fmt[i]);
 		if (isdigit(fmt[i])) {
 			unsigned long long c;
@@ -124,6 +126,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 		case 'q': arg.q = va_arg(ap,          long long *); break;
 		case 'Q': arg.Q = va_arg(ap, unsigned long long *); break;
 		case 'f': arg.f = va_arg(ap,          float     *); break;
+		case 'd': arg.d = va_arg(ap,          double    *); break;
 		case 'x': break;
 		return PACK_FMTINVAL;
 		}
@@ -144,6 +147,10 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 				float f = convert_ieee754b32(val.u);
 				val.f = f;
 				tr_debug("val.f: %f", val.f);
+			} else if (fmt[i] == 'd') {
+				double d = convert_ieee754b64(val.u);
+				val.d = d;
+				tr_debug("val.d: %f", val.d);
 			} else if (sign) {
 				intmax_t vals;
 				if (!(val.u & (UINTMAX_C(1) << (s * 8 - 1)))) {
@@ -168,6 +175,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 			case 'q': arg.q[j] = val.s; break;
 			case 'Q': arg.Q[j] = val.u; break;
 			case 'f': arg.f[j] = val.f; break;
+			case 'd': arg.d[j] = val.d; break;
 			}
 		}
 skip:

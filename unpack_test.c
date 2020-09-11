@@ -50,6 +50,20 @@ TEST(simple0_float, "simple unpack float")
 	return true;
 }
 
+TEST(simple0_double, "simple unpack double")
+{
+	double v[1] = { __LINE__ };
+
+	CHECK_UNPACK(DATA(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), "d", &v);
+	CHECK_EQUAL("f", v[0], 0.0f);
+	CHECK_UNPACK(DATA(0x3f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), "d", &v);
+	CHECK_EQUAL("f", v[0], 1.0f);
+	CHECK_UNPACK(DATA(0x40, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00), "d", &v);
+	CHECK_EQUAL("f", v[0], 8.0f);
+
+	return true;
+}
+
 int main(void)
 {
 	extern struct test __start_tests, __stop_tests;
