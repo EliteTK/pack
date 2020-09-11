@@ -22,11 +22,11 @@ struct test {
 	__attribute__((__used__)) = \
 		{ test_##name, desc }; \
 	static bool test_##name(void)
-#define DATA(...) (unsigned char []){ __VA_ARGS__ }, sizeof (unsigned char []){ __VA_ARGS__ }
+#define DATA(...) (unsigned char []){ __VA_ARGS__ }
 #define CHECK(test) if (!(test)) { puts("! " #test); return false; }
 
 #define CHECK_UNPACK(data, fmt, ...) do { \
-	enum pack_status CHECK_UNPACK_s = unpack(data, fmt, __VA_ARGS__); \
+	enum pack_status CHECK_UNPACK_s = unpack(data, sizeof (data), fmt, __VA_ARGS__); \
 	if (CHECK_UNPACK_s != PACK_OK) { \
 		printf(__FILE__ ":%d unpack(" #data ", " #fmt ", ...) -> %s (%d)\n", __LINE__, pack_strerror(CHECK_UNPACK_s), CHECK_UNPACK_s); \
 		return false; \
