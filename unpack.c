@@ -135,7 +135,7 @@ enum pack_status unpack(const void *buf_, size_t size, const char *fmt, ...)
 		if (fmt[i] == 'x') goto skip;
 
 		for (unsigned long long j = 0; j < count; j++) {
-			val.u = read_val(buf + s * j, s, endianness);
+			val.u = read_val(buf + offset + s * j, s, endianness);
 			tr_debug("val.u: %" PRIuMAX, val.u);
 
 			if (fmt[i] == 'f') {
