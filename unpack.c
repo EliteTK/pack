@@ -54,7 +54,7 @@ static type convert_ieee754b##total(uintmax_t b) \
 GEN_CONV_IEEE754B(float, 32, 8, 23)
 GEN_CONV_IEEE754B(double, 64, 11, 52)
 
-static uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
+static uintmax_t read_val(const unsigned char *buf, size_t size, enum endian e)
 {
 	uintmax_t val = 0;
 
@@ -65,10 +65,10 @@ static uintmax_t read_val(unsigned char *buf, size_t size, enum endian e)
 	return val;
 }
 
-enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
+enum pack_status unpack(const void *buf_, size_t size, const char *fmt, ...)
 {
 	enum endian endianness = BIG;
-	unsigned char *buf = buf_;
+	const unsigned char *buf = buf_;
 	size_t offset = 0;
 	va_list ap;
 
