@@ -18,6 +18,8 @@
 
 enum endian { BIG, LITTLE };
 
+#define BITMASK(n) (UINTMAX_MAX >> (sizeof (uintmax_t) * CHAR_BIT - n))
+
 static float ieee754tof(uintmax_t b)
 {
 	bool isneg;
@@ -144,7 +146,7 @@ enum pack_status unpack(void *buf_, size_t size, const char *fmt, ...)
 				if (!(val.u & (UINTMAX_C(1) << (s * 8 - 1)))) {
 					vals = val.u;
 				} else {
-					uintmax_t offt = UINTMAX_MAX >> (sizeof offt * CHAR_BIT - s * 8);
+					uintmax_t offt = BITMASK(s * 8);
 					vals = val.u - offt - 1;
 				}
 				val.s = vals;
