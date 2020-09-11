@@ -134,9 +134,9 @@ enum pack_status unpack(const void *buf_, size_t size, const char *fmt, ...)
 
 		if (fmt[i] == 'x') goto skip;
 
-		for (unsigned long long j = 0; j < count; j++) {
+		for (size_t j = 0; j < count; j++) {
 			val.u = read_val(buf + offset + s * j, s, endianness);
-			tr_debug("val.u: %" PRIuMAX, val.u);
+			tr_debug("val.u: %" PRIuMAX ", at: %zu", val.u, offset + s * j);
 
 			if (fmt[i] == 'f') {
 				float f = convert_ieee754b32(val.u);
